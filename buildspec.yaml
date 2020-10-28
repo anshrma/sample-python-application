@@ -18,7 +18,6 @@ phases:
         - sed -i "s|<PASSWORD>|$artifactory_password|g" ./app/requirements.txt 
         - sed -i "s|<URL>|$artifactory_url|g" app/requirements.txt 
         - cat app/requirements.txt
-        - cat /etc/sysconfig/docker
         - docker login $artifactory_url:80 -u $artifactory_username -p $artifactory_password
   build:
     commands:
