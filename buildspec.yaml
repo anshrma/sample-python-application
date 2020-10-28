@@ -6,7 +6,8 @@ env:
     artifactory_password : artifactory-codepipeline-credentials:password
     artifactory_url : artifactory-codepipeline-credentials:url
 phases:
-  commands:
+  install:
+    commands:
       - printenv
   pre_build:
       commands:
