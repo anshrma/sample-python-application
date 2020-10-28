@@ -13,11 +13,11 @@ phases:
       commands:
         - pwd
         - ls -ltr
-        - sed -i 's/<USERNAME>/$artifactory_username/g' ./app/requirements.txt 
-        - sed -i 's/<PASSWORD>/$artifactory_password/g' ./app/requirements.txt 
-        - sed -i 's/<URL>/$artifactory_url/g' app/requirements.txt 
+        - echo $artifactory_url
+        - sed -i "s/<USERNAME>|$artifactory_username|g" ./app/requirements.txt 
+        - sed -i "s/<PASSWORD>|$artifactory_password|g" ./app/requirements.txt 
+        - sed -i "s/<URL>|$artifactory_url|g" app/requirements.txt 
         - cat app/requirements.txt
-        - cat /etc/docker/daemon.json
         - cat /etc/sysconfig/docker
         - docker login $artifactory_url:80 -u $artifactory_username -p $artifactory_password
   build:
