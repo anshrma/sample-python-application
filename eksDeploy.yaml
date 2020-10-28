@@ -1,0 +1,33 @@
+---
+version: 0.2
+env:
+  secrets-manager:
+    artifactory_username : artifactory-codepipeline-credentials:username
+    artifactory_password : artifactory-codepipeline-credentials:password
+    artifactory_url : artifactory-codepipeline-credentials:url
+phases:
+  install:
+    commands:
+      - printenv
+      - curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+      - chmod 700 get_helm.sh
+      - ./get_helm.sh
+  pre_build:
+      commands:
+        - TAG="$CODEBUILD_RESOLVED_SOURCE_VERSION"
+        - ls -ltr
+  post_build:
+    commands:
+      - helm repo add helm-repo http://$artifactory_url/artifactory/helm --username $artifactory_username --password $artifactory_password
+      - helm repo update
+      - CREDENTIALS=$(aws sts assume-role --role-arn arn:aws:iam::743894196335:role/EksDescribePipeline --role-session-name codebuild-kubectl --duration-seconds 900)
+      - export AWS_ACCESS_KEY_ID="$(echo ${CREDENTIALS} | jq -r '.Credentials.AccessKeyId')"
+      - export AWS_SECRET_ACCESS_KEY="$(echo ${CREDENTIALS} | jq -r '.Credentials.SecretAccessKey')"
+      - export AWS_SESSION_TOKEN="$(echo ${CREDENTIALS} | jq -r '.Credentials.SessionToken')"
+      - export AWS_EXPIRATION=$(echo ${CREDENTIALS} | jq -r '.Credentials.Expiration')
+      - aws sts get-caller-identity
+      - kubectl get svc
+      - kubectl get nodes
+      - helm upgrade --install --generate-name --set image.repository="$artifactory_url:80/docker/sample-application:$CODEBUILD_RESOLVED_SOURCE_VERSION" helm-repo
+artifacts:
+  files: build.json
