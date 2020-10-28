@@ -9,9 +9,12 @@ phases:
   install:
     commands:
       - printenv
+      - curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+      - chmod 700 get_helm.sh
+      - ./get_helm.sh
   pre_build:
       commands:
-        - pwd
+        - TAG="$CODEBUILD_RESOLVED_SOURCE_VERSION"
         - ls -ltr
         - echo $artifactory_url
         - sed -i "s|<USERNAME>|$artifactory_username|g" ./app/requirements.txt 
@@ -22,17 +25,19 @@ phases:
   build:
     commands:
       - docker build --tag $artifactory_url:80/docker/sample-application .
+      - helm repo index ./sample-helm-chart && helm package ./sample-helm-chart
 
   post_build:
     commands:
-      - docker push $REPOSITORY_URI:$TAG
-      - CREDENTIALS=$(aws sts assume-role --role-arn $EKS_KUBECTL_ROLE_ARN --role-session-name codebuild-kubectl --duration-seconds 900)
-      - export AWS_ACCESS_KEY_ID="$(echo ${CREDENTIALS} | jq -r '.Credentials.AccessKeyId')"
-      - export AWS_SECRET_ACCESS_KEY="$(echo ${CREDENTIALS} | jq -r '.Credentials.SecretAccessKey')"
-      - export AWS_SESSION_TOKEN="$(echo ${CREDENTIALS} | jq -r '.Credentials.SessionToken')"
-      - export AWS_EXPIRATION=$(echo ${CREDENTIALS} | jq -r '.Credentials.Expiration')
-      - aws eks update-kubeconfig --name $EKS_CLUSTER_NAME
-      - kubectl apply -f hello-k8s.yml
-      - printf '[{"name":"hello-k8s","imageUri":"%s"}]' $REPOSITORY_URI:$TAG > build.json
+      #- docker push $REPOSITORY_URI:$TAG
+      - curl -u $artifactory_username:$artifactory_password -T *.tgz "http://$artifactory_url/artifactory/helm/sample-helm-chart"
+      # - CREDENTIALS=$(aws sts assume-role --role-arn $EKS_KUBECTL_ROLE_ARN --role-session-name codebuild-kubectl --duration-seconds 900)
+      # - export AWS_ACCESS_KEY_ID="$(echo ${CREDENTIALS} | jq -r '.Credentials.AccessKeyId')"
+      # - export AWS_SECRET_ACCESS_KEY="$(echo ${CREDENTIALS} | jq -r '.Credentials.SecretAccessKey')"
+      # - export AWS_SESSION_TOKEN="$(echo ${CREDENTIALS} | jq -r '.Credentials.SessionToken')"
+      # - export AWS_EXPIRATION=$(echo ${CREDENTIALS} | jq -r '.Credentials.Expiration')
+      # - aws eks update-kubeconfig --name $EKS_CLUSTER_NAME
+      # - kubectl apply -f hello-k8s.yml
+      # - printf '[{"name":"hello-k8s","imageUri":"%s"}]' $REPOSITORY_URI:$TAG > build.json
 artifacts:
   files: build.json
