@@ -7,8 +7,12 @@ env:
     artifactory_url : artifactory-codepipeline-credentials:url
 phases:
   install:
+    runtime-versions:
+        docker: 18 
     commands:
       - printenv
+      - nohup /usr/local/bin/dockerd --host=unix:///var/run/docker.sock --host=tcp://127.0.0.1:2375 --storage-driver=overlay2&
+      - timeout 15 sh -c "until docker info; do echo .; sleep 1; done"
   pre_build:
       commands:
         - pwd
@@ -16,7 +20,8 @@ phases:
         - sed -i 's/<USERNAME>/$artifactory_username/g' ./app/requirements.txt 
         - sed -i 's/<PASSWORD>/$artifactory_password/g' ./app/requirements.txt 
         - sed -i 's/<URL>/$artifactory_url/g' app/requirements.txt 
-        - docker images
+        - cat app/requirements.txt
+        - cat /etc/docker/daemon.json
         - cat /etc/sysconfig/docker
   build:
     commands:
