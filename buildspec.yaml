@@ -1,0 +1,37 @@
+---
+version: 0.2
+env:
+  secrets-manager:
+    artifactory_username : artifactory-codepipeline-credentials:username
+    artifactory_password : artifactory-codepipeline-credentials:password
+    artifactory_url : artifactory-codepipeline-credentials:url
+phases:
+  install:
+    commands:
+      - printenv
+  pre_build:
+      commands:
+        - pwd
+        - ls -ltr
+        - sed -i 's/<USERNAME>/$artifactory_username/g' ./app/requirements.txt 
+        - sed -i 's/<PASSWORD>/$artifactory_password/g' ./app/requirements.txt 
+        - sed -i 's/<URL>/$artifactory_url/g' app/requirements.txt 
+        - docker images
+        - cat /etc/sysconfig/docker
+  build:
+    commands:
+      - docker build --tag $REPOSITORY_URI:$TAG .
+
+  post_build:
+    commands:
+      - docker push $REPOSITORY_URI:$TAG
+      - CREDENTIALS=$(aws sts assume-role --role-arn $EKS_KUBECTL_ROLE_ARN --role-session-name codebuild-kubectl --duration-seconds 900)
+      - export AWS_ACCESS_KEY_ID="$(echo ${CREDENTIALS} | jq -r '.Credentials.AccessKeyId')"
+      - export AWS_SECRET_ACCESS_KEY="$(echo ${CREDENTIALS} | jq -r '.Credentials.SecretAccessKey')"
+      - export AWS_SESSION_TOKEN="$(echo ${CREDENTIALS} | jq -r '.Credentials.SessionToken')"
+      - export AWS_EXPIRATION=$(echo ${CREDENTIALS} | jq -r '.Credentials.Expiration')
+      - aws eks update-kubeconfig --name $EKS_CLUSTER_NAME
+      - kubectl apply -f hello-k8s.yml
+      - printf '[{"name":"hello-k8s","imageUri":"%s"}]' $REPOSITORY_URI:$TAG > build.json
+artifacts:
+  files: build.json
