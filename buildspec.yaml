@@ -18,10 +18,10 @@ phases:
         - sed -i "s|<PASSWORD>|$artifactory_password|g" ./app/requirements.txt 
         - sed -i "s|<URL>|$artifactory_url|g" app/requirements.txt 
         - cat app/requirements.txt
-        - docker login $artifactory_url:80 -u $artifactory_username -p $artifactory_password
+        #- docker login $artifactory_url:80 -u $artifactory_username -p $artifactory_password
   build:
     commands:
-      - docker build --tag $REPOSITORY_URI:$TAG .
+      - docker build --tag $artifactory_url:80/docker/sample-application .
 
   post_build:
     commands:
