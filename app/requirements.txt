@@ -1,2 +1,3 @@
+--trusted-host <URL>
 --extra-index-url http://<USERNAME>:<PASSWORD>@<URL>/artifactory/api/pypi/pypi/simple
 Flask
