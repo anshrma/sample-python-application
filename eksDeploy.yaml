@@ -31,6 +31,6 @@ phases:
       - aws eks update-kubeconfig --name $EKS_CLUSTER_NAME
       - kubectl get svc
       - kubectl get nodes
-      - helm upgrade --install sample-application --set image.repository="$artifactory_url:80/docker/sample-application:$CODEBUILD_RESOLVED_SOURCE_VERSION" helm-repo/sample-helm-chart
+      #- helm upgrade --install sample-application --set image.repository="$artifactory_url:80/docker/sample-application:$CODEBUILD_RESOLVED_SOURCE_VERSION" helm-repo/sample-helm-chart
 artifacts:
   files: build.json
