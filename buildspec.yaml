@@ -27,7 +27,7 @@ phases:
       - docker build --tag $artifactory_url:80/docker/sample-application .
       - helm package ./sample-helm-chart
       - mkdir package-to-upload && mv *.tgz ./packge-to-upload
-      - helm repo index ./packge-to-upload && helm repo index ./package-to-upload --url http://$artifactory_url/artifactory/helm/sample-helm-chart/
+      - helm repo index ./package-to-upload --url http://$artifactory_url/artifactory/helm/sample-helm-chart/
 
   post_build:
     commands:
